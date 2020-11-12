@@ -38,15 +38,21 @@ tienda(N, Lista_Socios, Lista_Productos) ->
         {registra_producto, Nombre_Producto, Cantidad} ->
             Nodo = nodo(productos),
             monitor_node(Nodo, true),
-            Pid = spawn(Nodo, tarea6, producto, [N]),
             receive
 		        {nodedown, Nodo} -> 
                     io:format("nodo ~w no existe~n", [socios]),
                     tienda(N, Lista_Socios, Lista_Productos)
 			    after 0 -> 
-                    io:format("producto ~s creado ~n", [Nombre_Producto]),
-                    monitor_node(Nodo, false),
-                    tienda(N, Lista_Socios, Lista_Productos++[{Nombre_Producto, Cantidad, Pid}])
+                    case busca(Nombre_Producto, Lista_Productos) of
+                        inexistente ->
+                            Pid = spawn(Nodo, tarea6, producto, [N]),
+                            io:format("producto ~s creado ~n", [Nombre_Producto]),
+                            monitor_node(Nodo, false),
+                            tienda(N, Lista_Socios, Lista_Productos++[{Nombre_Producto, Cantidad, Pid}]);
+                        {C, Epid} ->
+                            io:format("producto ~s ya existe ~n", [Nombre_Producto]),
+                            tienda(N, Lista_Socios, Lista_Productos)
+                    end
 	        end;
         {De, {elimina_producto, Nombre_Producto}} ->
             case busca(Nombre_Producto, Lista_Productos) of
@@ -140,6 +146,15 @@ modifica_producto(Producto, Cantidad) ->
         excede ->
             io:format("El producto ~s no pudo ser modificado debido a que la cantidad excede las existencias~n", [Producto])
    end.
+
+% COMO USARLO
+% 1. Crear los nodos en diferentes terminales
+%     => erl -sname tienda
+%     => erl -sname socios
+%     => erl -sname productos
+% 2. Compilar cada uno con c(tarea6).
+% 3. En el nodo de tienda poner => tarea6:abre_tienda().
+
 
 
 
