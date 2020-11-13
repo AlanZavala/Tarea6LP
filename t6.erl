@@ -2,6 +2,12 @@
 % Paola Villarreal A00821971
 % Alan Zavala A01338448
 
+% COMO USARLO
+% 1. Cambiar el nombre de tu maquina en la linea 16
+% 2. Crear un nodo en una terminal => erl -sname tienda
+% 3. Compilarlo con c(t6).
+% 4. Registrar el proceso => t6:abre_tienda().
+
 -module(t6).
 -m([lists,math,io]).
 -export([abre_tienda/0, cierra_tienda/0, tienda/0, suscribir_socio/1, elimina_socio/1, lista_socios/0, registra_producto/2, elimina_producto/1, modifica_producto/2, lista_existencias/0, producto/2]).
@@ -65,9 +71,9 @@ tienda(Lista_Socios, Lista_Productos) ->
                     De ! modificado
             end,
             tienda(Lista_Socios, Lista_Productos);
-        % lista_existencias ->
-        %     io:format("Productos existentes = ~s~n", [lista_nombres(Lista_Productos)]),
-        %     tienda(Lista_Socios, Lista_Productos);
+        lista_existencias ->
+            lists:map(fun({_, Epid}) -> 
+		              Epid ! lista end, Lista_Productos);
         termina ->
             lists:map(fun({N, Epid}) -> 
 		              Epid ! {termina, N} end, Lista_Productos)
@@ -88,6 +94,9 @@ producto(N, C) ->
                     io:format("El producto ~s ha sido modificado~n", [Producto]),
                     producto(N, C+Cantidad)
                 end;
+        lista ->
+            io:format("~s ~w ~n", [N, C]),
+            producto(N, C);
         {termina, Nombre} ->
             io:format("La venta de ~s ha terminado~n", [Nombre])
    end.
@@ -160,8 +169,3 @@ lista_existencias() ->
 cierra_tienda() ->
     {tienda, nodo(tienda)} ! termina,
     ok.
-
-% COMO USARLO
-% 1. Crear un nodo en una terminal => erl -sname tienda
-% 2. Compilarlo con c(t6).
-% 3. Registrar el proceso => t6:abre_tienda().
