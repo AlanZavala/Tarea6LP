@@ -4,7 +4,7 @@
 
 -module(tarea6).
 -m([lists,math,io]).
--export([abre_tienda/0, tienda/0, suscribir_socio/1, socio/1, registra_producto/2, elimina_producto/1, modifica_producto/2, producto/1]).
+-export([abre_tienda/0, cerrar_tienda/0, tienda/0, suscribir_socio/1, socio/1, registra_producto/2, elimina_producto/1, modifica_producto/2, producto/1]).
 
 % nombre corto del servidor (nombre@máquina)
 nodo(Nombre) -> list_to_atom(atom_to_list(Nombre)++"@DESKTOP-2JRT0KR"). %CAMBIAR A NOMBRE DE TU MAQUINA
@@ -43,7 +43,7 @@ tienda(N, Lista_Socios, Lista_Productos) ->
                     io:format("nodo ~w no existe~n", [socios]),
                     tienda(N, Lista_Socios, Lista_Productos)
 			    after 0 -> 
-                    case busca(Nombre_Producto, Lista_Productos) of
+                    case busca_producto(Nombre_Producto, Lista_Productos) of
                         inexistente ->
                             Pid = spawn(Nodo, tarea6, producto, [N]),
                             io:format("producto ~s creado ~n", [Nombre_Producto]),
@@ -55,7 +55,7 @@ tienda(N, Lista_Socios, Lista_Productos) ->
                     end
 	        end;
         {De, {elimina_producto, Nombre_Producto}} ->
-            case busca(Nombre_Producto, Lista_Productos) of
+            case busca_producto(Nombre_Producto, Lista_Productos) of
                 inexistente ->
                     De ! inexistente;
                 {C, Epid} ->
@@ -64,7 +64,7 @@ tienda(N, Lista_Socios, Lista_Productos) ->
             end,
             tienda(N, Lista_Socios, Lista_Productos);
         {De, {modifica_producto, Nombre_Producto, Cantidad}} ->
-            case busca(Nombre_Producto, Lista_Productos) of
+            case busca_producto(Nombre_Producto, Lista_Productos) of
                 inexistente ->
                     De ! inexistente;
                 {C, Epid} ->
@@ -98,15 +98,16 @@ producto(N) ->
         {eliminar, Producto} ->
 	        io:format("El producto ~s ha sido eliminado~n", [Producto]);
         {modificado, Producto} ->
-            io:format("El producto ~s ha sido modificado~n", [Producto])
+            io:format("El producto ~s ha sido modificado~n", [Producto]),
+            producto(N)
    end.
 
 % FUNCIONES AUXILIARES
 
-% busca un nombre dentro de la lista de productos
-busca(_, []) -> inexistente;
-busca(N, [{N, C, PID}|_]) -> {C, PID}; % regresa cantidad y PID
-busca(N, [_|Resto]) -> busca(N, Resto).
+% busca productos un nombre dentro de la lista de productos
+busca_producto(_, []) -> inexistente;
+busca_producto(N, [{N, C, PID}|_]) -> {C, PID}; % regresa cantidad y PID
+busca_producto(N, [_|Resto]) -> busca_producto(N, Resto).
 
 % FUNCIONES DE INTERFAZ DE USUARIO
 
@@ -146,6 +147,10 @@ modifica_producto(Producto, Cantidad) ->
         excede ->
             io:format("El producto ~s no pudo ser modificado debido a que la cantidad excede las existencias~n", [Producto])
    end.
+
+cerrar_tienda() ->
+    {tienda, nodo(tienda)} ! cierra,
+    'La tienda cerro'.
 
 % COMO USARLO
 % 1. Crear los nodos en diferentes terminales
