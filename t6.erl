@@ -68,13 +68,13 @@ producto(L) ->
         {eliminar, Producto} ->
 	        io:format("El producto ~s ha sido eliminado~n", [Producto]);
         {modificado, Producto, Cantidad} ->
-            case busca_cantidad(Producto, L) of
-                C ->
+            case busca_cantidad(Producto, L, 1) of
+                {C, Idx} ->
                     case C + Cantidad > 0 of
                         false ->
                             io:format("El producto ~s no pudo ser modificado debido a que la cantidad excede las existencias~n", [Producto]);
                         true ->
-                            %Cantidad = 
+                            reemplaza_cantidad(L, Idx, C+Cantidad),
                             io:format("El producto ~s ha sido modificado~n", [Producto])
                     end,
                     producto(L)
@@ -90,9 +90,13 @@ busca_productos(_, []) -> inexistente;
 busca_productos(N, [{N, PID}|_]) -> PID;
 busca_productos(N, [_|Resto]) -> busca_productos(N, Resto).
 
-busca_cantidad(_, []) -> inexistente;
-busca_cantidad(N, [{N, C}|_]) -> C;
-busca_cantidad(N, [_|Resto]) -> busca_cantidad(N, Resto).
+busca_cantidad(_, [], i) -> inexistente;
+busca_cantidad(N, [{N, C}|_], Idx) -> {C, Idx};
+busca_cantidad(N, [_|Resto], Idx) -> busca_cantidad(N, Resto, Idx).
+
+reemplaza_cantidad(L, Index, NewValue) -> 
+    {L1,[_|L2]} = lists:split(Index-1,L),
+    L1++[{_, NewValue}|L2].
 
 % FUNCIONES DE INTERFAZ DE USUARIO
 
