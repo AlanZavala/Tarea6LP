@@ -108,11 +108,9 @@ busca_productos(_, []) -> inexistente;
 busca_productos(N, [{N, PID}|_]) -> PID; 
 busca_productos(N, [_|Resto]) -> busca_productos(N, Resto).
 
+% elimina de la lista el nombre recibido
 eliminar(N, L) ->
     [Y || Y <- L, Y =/= N].
-
-% lista_nombres([]) -> [];
-% lista_nombres(L, NL) ->  
 
 % FUNCIONES DE INTERFAZ DE USUARIO
 
@@ -161,6 +159,7 @@ modifica_producto(Producto, Cantidad) ->
 	        {Producto}
     end.
 
+% lista todos los productos existentes con sus cantidades
 lista_existencias() ->
     {tienda, nodo(tienda)} ! lista_existencias,
     ok.
