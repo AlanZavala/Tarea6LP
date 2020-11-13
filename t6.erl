@@ -94,9 +94,9 @@ busca_cantidad(_, [], i) -> inexistente;
 busca_cantidad(N, [{N, C}|_], Idx) -> {C, Idx};
 busca_cantidad(N, [_|Resto], Idx) -> busca_cantidad(N, Resto, Idx).
 
-reemplaza_cantidad(L, Index, NewValue) -> 
-    {L1,[_|L2]} = lists:split(Index-1,L),
-    L1++[{_, NewValue}|L2].
+%reemplaza_cantidad(L, Index, NewValue) -> 
+ %   {L1,[_|L2]} = lists:split(Index-1,L),
+  %  L1++[{_, NewValue}|L2].
 
 % FUNCIONES DE INTERFAZ DE USUARIO
 
