@@ -31,7 +31,7 @@ tienda(Lista_Socios, Lista_Productos) ->
         {registra_producto, Nombre_Producto, Cantidad} ->
             case lists:keyfind(Nombre_Producto, 1, Lista_Productos) of
                 false ->
-                    Pid = spawn(t6, producto, [{Nombre_Producto, Cantidad}]),
+                    Pid = spawn(t6, producto, [[{Nombre_Producto, Cantidad}]]),
                     io:format("producto ~s creado ~n", [Nombre_Producto]),
                     tienda(Lista_Socios, Lista_Productos++[{Nombre_Producto, Pid}]);
                 {Nombre_Producto, _} ->
@@ -52,7 +52,8 @@ tienda(Lista_Socios, Lista_Productos) ->
                 inexistente ->
                     De ! inexistente;
                 Epid ->
-                    Epid ! {modificado, Nombre_Producto, Cantidad}
+                    Epid ! {modificado, Nombre_Producto, Cantidad},
+                    De ! modificado
             end,
             tienda(Lista_Socios, Lista_Productos);
         termina ->
@@ -68,9 +69,7 @@ producto(L) ->
 	        io:format("El producto ~s ha sido eliminado~n", [Producto]);
         {modificado, Producto, Cantidad} ->
             case busca_cantidad(Producto, L) of
-                inexistente ->
-                    io:format("El producto ~s no existe~n", [Producto]);
-                {P, C} ->
+                C ->
                     case C + Cantidad > 0 of
                         false ->
                             io:format("El producto ~s no pudo ser modificado debido a que la cantidad excede las existencias~n", [Producto]);
@@ -92,7 +91,7 @@ busca_productos(N, [{N, PID}|_]) -> PID;
 busca_productos(N, [_|Resto]) -> busca_productos(N, Resto).
 
 busca_cantidad(_, []) -> inexistente;
-busca_cantidad(N, [{N, C}|_]) -> {N, C};
+busca_cantidad(N, [{N, C}|_]) -> C;
 busca_cantidad(N, [_|Resto]) -> busca_cantidad(N, Resto).
 
 % FUNCIONES DE INTERFAZ DE USUARIO
@@ -121,18 +120,20 @@ registra_producto(Producto, Cantidad) ->
 elimina_producto(Producto) -> 
     {tienda, nodo(tienda)} ! {self(), {elimina_producto, Producto}},
     receive 
-      inexistente -> 
-	     io:format("El producto ~s no existe~n", [Producto]);
-	  eliminado ->
-	     {Producto}
-   end.
+        inexistente -> 
+	        io:format("El producto ~s no existe~n", [Producto]);
+	    eliminado ->
+	        {Producto}
+    end.
 
 % modifica la cantidad de los productos si existe y si es posible
 modifica_producto(Producto, Cantidad) -> 
     {tienda, nodo(tienda)} ! {self(), {modifica_producto, Producto, Cantidad}},
     receive 
         inexistente -> 
-	        io:format("El producto ~s no existe~n", [Producto])
+	        io:format("El producto ~s no existe~n", [Producto]);
+        modificado ->
+	        {Producto}
     end.
 
 % cierra la tienda, terminando todos los procesos de los productos
