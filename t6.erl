@@ -10,7 +10,7 @@
 
 -module(t6).
 -m([lists,math,io]).
--export([abre_tienda/0, cierra_tienda/0, tienda/0, suscribir_socio/1, elimina_socio/1, lista_socios/0, registra_producto/2, elimina_producto/1, modifica_producto/2, lista_existencias/0, producto/2]).
+-export([abre_tienda/0, cierra_tienda/0, tienda/0, suscribir_socio/1, elimina_socio/1, lista_socios/0, registra_producto/2, elimina_producto/1, modifica_producto/2, lista_existencias/0, producto/2, crea_pedido/3]).
 
 % nombre corto del servidor (nombre@máquina)
 nodo(Nombre) -> list_to_atom(atom_to_list(Nombre)++"@DESKTOP-2JRT0KR"). %CAMBIAR A NOMBRE DE TU MAQUINA
@@ -42,6 +42,15 @@ tienda(Lista_Socios, Lista_Productos) ->
             end;
         lista_socios ->
             io:format("Socios registrados = ~s~n", [Lista_Socios]),
+            tienda(Lista_Socios, Lista_Productos);
+        {De, {crea_pedido, Producto, Cantidad} } ->
+            case busca_productos(Producto, Lista_Productos) of
+                inexistente ->
+                    De ! inexistente;
+                Epid ->
+                    Epid ! {pedido, Producto, Cantidad},
+                    De ! pedido
+            end,
             tienda(Lista_Socios, Lista_Productos);
         {registra_producto, Nombre_Producto, Cantidad} ->
             case lists:keyfind(Nombre_Producto, 1, Lista_Productos) of
@@ -163,6 +172,16 @@ modifica_producto(Producto, Cantidad) ->
 lista_existencias() ->
     {tienda, nodo(tienda)} ! lista_existencias,
     ok.
+
+% crea pedido para el socio correspondiente
+crea_pedido(Socio, Producto, Cantidad) -> 
+    {tienda, nodo(tienda)} ! {self(), {crea_pedido, Socio, Producto, Cantidad}},
+    receive 
+        inexistente -> 
+	        io:format("El producto ~s no existe~n", [Producto]);
+        pedido ->
+	        {Producto}
+    end.
 
 % cierra la tienda, terminando todos los procesos de los productos
 cierra_tienda() ->
